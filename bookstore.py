@@ -1,10 +1,5 @@
-class Select_option():
+import sqlite3
 
-    def __init__(self):
-        self.option = []
-        self.options = []
-
-        
 class Menu():
     
     def __init__(self):
@@ -33,34 +28,69 @@ class Book_store(Menu):
         Menu.__init__(self)
         self.option = ['書籍分類', '購物車', '會員登入', '加入會員', '離開']
         self.method = [Book_class,Cart]
-        
-    #def handle(self, num, para):
-    #    return Menu.handle(self, num, para)
-
+    
 class Book_class(Menu):
-
+    
     def __init__(self):
         Menu.__init__(self)
-        self.option = ['文學小說', '藝術設計', '商業理財', '心理勵志', '自然科普', '醫療保健']
-        self.method = [Book_category]
-    
+        
+        conn = sqlite3.connect("bookstore.db")
+        sql = """SELECT * FROM bookstore"""
+        result = conn.execute(sql)
+        for record in result:
+            self.method.append(Book_category)
+            self.option.append(record[1])
+        
 class Book_category(Menu):
-
+        
     def __init__(self, name):
         Menu.__init__(self)
-        self.option = ['胃食道逆流', '怎麼都不會']
-        self.method = [Book,Book]
+        self.name = name
+        conn = sqlite3.connect(f"{name}.db")
+        sql = f"""SELECT * FROM {name}"""
+        result = conn.execute(sql)
+        self.book_id =[]
+        for record in result:
+            self.option.append(record[1])
+            self.method.append(Book)
+            self.book_id.append(record[0])
+        #self.page = 1
+    def display(self):
+        if(len(self.option) < 9):
+            for i in range(len(self.option)):
+                print('%d.%s' %(i+1,self.option[i]))
+            print('%d.離開' %(len(self.option)+2))
+        else:
+            for i in range(8):
+                print('%d.%s' %(i+1,self.option[i]))
+            print('9.下一頁\n10.離開')
+    def handle(self, num = 1,para = False): #執行功能(class) => class.__init__
+        s = self.method[num](self.book_id[num],self.name)
+        return s
+        
 cart_list = []        
 class Book(Menu):
 
-    def __init__(self, name):
+    def __init__(self, id_ ,class_):
         Menu.__init__(self)
-        self.name = name 
+        
+        conn = sqlite3.connect(f"{class_}.db")
+        sql = f"""SELECT * FROM {class_}
+                WHERE id = {id_}"""
+        result = conn.execute(sql)
+        for record in result:
+            self.name = record[1]
+            self.price = record[2]
+            self.content = record[3]
+        
         self.option = ['加入購物車', '回上一步']
         self.method = [self.Add_to_cart]
         
     def display(self):
         print('書名:', self.name)
+        print('價錢:', self.price)
+        print('內容:', self.content)
+        
         Menu.display(self)
 
     def handle(self, num, para):
@@ -79,7 +109,7 @@ class Cart(Menu):
         Menu.__init__(self)
         self.option = ['回主選單']
         self.method = [Book_store]
-        
+        5
     def display(self):
         for i in range(len(cart_list)):
             print(' %s' %(cart_list[i]))
